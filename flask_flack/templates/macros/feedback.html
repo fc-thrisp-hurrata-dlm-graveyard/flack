@@ -1,0 +1,44 @@
+{% macro feedback_form(form) %}
+    <a data-toggle="modal" href="#feedback-feedbackModal">feedback</a>
+    <div class="modal hide" id="feedback-feedbackModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-body">
+            <div id='feedback-form'>
+                <form action="{{ url_for('feedback.accept_feedback') }}" method=post>
+                    {{ form.csrf_token }}
+                    <fieldset id="inputs">
+                        {{ form.tag }}
+                        {{ form.next }}
+                        {{ form.user }}
+                        {{ form.comment }}
+                    </fieldset>
+                    <fieldset id="actions">
+                        <input type=submit id="submit" value="Tell us what you think.">
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro problems_form(form) %}
+    <a data-toggle="modal" href="#problems-feedbackModal">feedback</a>
+    <div class="modal hide" id="problems-feedbackModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-body">
+            <div id='problems-form'>
+                <form action="{{ url_for('feedback.accept_feedback') }}" method=post>
+                    {{ form.csrf_token }}
+                    <fieldset id="inputs">
+                        {{ form.tag }}
+                        {{ form.next }}
+                        {{ form.user }}
+                        {#}{{ form.requested_priority }}{#}
+                        {{ form.problem }}
+                    </fieldset>
+                    <fieldset id="actions">
+                        <input type=submit id="submit" value="Submit your issue.">
+                    </fieldset>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endmacro %}
