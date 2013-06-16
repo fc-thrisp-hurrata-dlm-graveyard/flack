@@ -2,7 +2,7 @@ from flask import current_app, redirect, request, render_template, jsonify, \
     after_this_request, Blueprint
 from werkzeug import LocalProxy
 from werkzeug.datastructures import MultiDict
-
+from .utils import get_url, get_post_feedback_redirect
 
 _flack = LocalProxy(lambda: current_app.extensions['flack'])
 
@@ -25,43 +25,46 @@ def _commit(response=None):
 def _ctx(endpoint):
     return _flack._run_ctx_processor(endpoint)
 
+def get_form_class(which_form):
+    wf = "{}_form".format(which_form)
+    return getattr(_flack, wf)
+
 def get_relevant_form():
     requested = request.endpoint.rsplit('.')[-1]
-    requested_form = "{}_form".format(requested)
-    form_class = getattr(_flack, requested_form)
+    form_class = get_form_class(requested)
 
     if request.json:
         form = form_class(MultiDict(request.json))
     else:
-        form = form_class(tag=requested)
+        form = form_class(feedback_tag=requested)
 
     if request.json:
         return _render_json(form)
+
+    form.next.data = get_url(request.args.get('next')) \
+                     or get_url(request.form.get('next')) or ''
 
     return render_template('feedback/{}.html'.format(requested),
                            form=form,
                            **_ctx(requested))
 
 def feedback():
-    #get tag from args or form
-    #establish which tag and if valid
-    form_class = getattr(_flack, request.form.feedback_tag)
+    form_class = get_form_class(request.form['feedback_tag'])
 
     if request.json:
         form = form_class(MultiDict(request.json))
     else:
         form = form_class()
 
-    if form.validate_on_submit():
+    #return str(form)
+    return render_template('test_.html', f=form)
+
+    #if form.validate_on_submit():
         #create feedback
-        if not request.json:
-            return redirect(get_post_login_redirect())
 
-    form.next.data = get_url(request.args.get('next')) \
-                     or get_url(request.form.get('next')) or ''
+    #    if not request.json:
+    #        return redirect(get_post_feedback_redirect())
 
-    if request.json:
-        return _render_json(form)
 
 def create_blueprint(state, import_name):
     bp = Blueprint(state.blueprint_name, import_name,

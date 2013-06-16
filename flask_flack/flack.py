@@ -11,6 +11,7 @@ _default_config = {
         'URL_PREFIX': None,
         'SUBDOMAIN': None,
         'FLASH_MESSAGES': True,
+        'DEFAULT_FEEDBACK_RETURN_URL': '/',
         'FEEDBACK_URL': '/feedback',
         'INTEREST_URL': '/feedback/interest',
         'PROBLEM_URL': '/feedback/problem',

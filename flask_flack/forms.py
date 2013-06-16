@@ -63,7 +63,7 @@ class EmailFormMixin():
 
 
 class TagMixin():
-    tag = HiddenField("tag")
+    feedback_tag = HiddenField("feedback_tag")
 
 
 class NextFormMixin():
@@ -77,7 +77,7 @@ class NextFormMixin():
             raise ValidationError(get_message('INVALID_REDIRECT')[0])
 
 
-class InterestForm(Form, TagMixin, EmailFormMixin):
+class InterestForm(Form, TagMixin, EmailFormMixin, NextFormMixin):
     interest = TextAreaField(get_form_field_label('interest'))
     submit = SubmitField(get_form_field_label('submit_interest'))
 
@@ -87,7 +87,7 @@ class InterestForm(Form, TagMixin, EmailFormMixin):
         return True
 
 
-class ProblemForm(Form, TagMixin, EmailFormMixin):
+class ProblemForm(Form, TagMixin, EmailFormMixin, NextFormMixin):
     requested_priority = SelectField(get_form_field_label('requested_priority'), choices=_default_choices)
     problem = TextAreaField(get_form_field_label('problem'))
     submit = SubmitField(get_form_field_label('submit_problem'))
@@ -98,7 +98,7 @@ class ProblemForm(Form, TagMixin, EmailFormMixin):
         return True
 
 
-class CommentForm(Form, TagMixin, EmailFormMixin):
+class CommentForm(Form, TagMixin, EmailFormMixin, NextFormMixin):
     comment = TextAreaField(get_form_field_label('comment'))
     submit = SubmitField(get_form_field_label('submit_comment'))
 

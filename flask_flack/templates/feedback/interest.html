@@ -2,7 +2,7 @@
 {% include "feedback/_feedback_macros/_messages.html" %}
 <h1>Let us know you're interested</h1>
 <form action="{{ url_for_feedback('feedback') }}" method="POST" name="interest_form">
-  {{ form.tag() }}
+  {{ form.feedback_tag() }}
   {{ render_field_with_errors(form.interest) }}
   {{ render_field(form.submit) }}
 </form>

@@ -1,7 +1,7 @@
 """
 Flack
 -----
-Flask extension for gatehring feedback
+Flask extension for gathering feedback
 """
 from flask_flack import __version__
 from setuptools import setup
