@@ -19,6 +19,7 @@ setup(
     description='feedback extension for flask',
     long_description=__doc__,
     packages=['flask_flack'],
+    test_suite="tests",
     zip_safe=False,
     platforms='any',
     install_requires=requires,

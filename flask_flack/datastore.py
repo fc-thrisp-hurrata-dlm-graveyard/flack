@@ -46,21 +46,13 @@ class FeedbackDatastore(object):
     def __init__(self, feedback_model):
         self.feedback_model = feedback_model
 
-    def _prepare_create_feedback_args(self, **kwargs):
-        #kwargs.setdefault('active', True)
-        #roles = kwargs.get('roles', [])
-        #for i, role in enumerate(roles):
-        #    rn = role.name if isinstance(role, self.role_model) else role
-            # see if the role exists
-        #    roles[i] = self.find_role(rn)
-        #kwargs['roles'] = roles
-        return kwargs
+    #def _prepare_create_feedback_args(self, **kwargs):
+        #return kwargs#return {k: v for k,v in kwargs.items() if k in feedback_model.__dict__.keys()}
 
     def create_feedback(self, **kwargs):
         """Creates and returns new feedback from the given parameters."""
-
-        feedback = self.feedback_model(**self._prepare_create_feedback_args(**kwargs))
-        return self.put(user)
+        feedback = self.feedback_model(**kwargs)
+        return self.put(feedback)
 
 
 class SQLAlchemyFeedbackDatastore(SQLAlchemyDatastore, FeedbackDatastore):
@@ -68,14 +60,23 @@ class SQLAlchemyFeedbackDatastore(SQLAlchemyDatastore, FeedbackDatastore):
         SQLAlchemyDatastore.__init__(self, db)
         FeedbackDatastore.__init__(self, feedback_model)
 
+    def find_feedback(self, feedback_tag):
+        pass
+
 
 class MongoEngineFeedbackDatastore(MongoEngineDatastore, FeedbackDatastore):
     def __init__(self, db, feedback_model):
         MongoEngineDatastore.__init__(self, db)
         FeedbackDatastore.__init__(self, feedback_model)
 
+    def find_feedback(self, feedback_tag):
+        pass
+
 
 class PeeweeFeedbackDatastore(PeeweeDatastore, FeedbackDatastore):
     def __init__(self, db, feedback_model):
         PeeweeDatastore.__init__(self, db)
         FeedbackDatastore.__init__(self, feedback_model)
+
+    def find_feedback(self, feedback_tag):
+        pass

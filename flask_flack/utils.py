@@ -1,4 +1,4 @@
-from flask import url_for, current_app
+from flask import url_for, current_app, request, session, flash
 from werkzeug import LocalProxy
 
 _flack = LocalProxy(lambda: current_app.extensions['flack'])
@@ -15,7 +15,7 @@ def get_post_action_redirect(config_key):
             find_redirect(config_key))
 
 def get_post_feedback_redirect():
-    return get_post_action_redirect('DEFAULT_FEEDBACK_RETURN_URL')
+    return get_post_action_redirect('FLACK_DEFAULT_FEEDBACK_RETURN_URL')
 
 def find_redirect(key):
     rv = (get_url(session.pop(key.lower(), None)) or

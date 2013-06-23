@@ -7,38 +7,43 @@ from .utils import get_config, url_for_feedback
 _flack = LocalProxy(lambda: current_app.extensions['flack'])
 
 _default_config = {
-        'BLUEPRINT_NAME': 'feedback',
-        'URL_PREFIX': None,
-        'SUBDOMAIN': None,
-        'FLASH_MESSAGES': True,
-        'DEFAULT_FEEDBACK_RETURN_URL': '/',
-        'FEEDBACK_URL': '/feedback',
-        'INTEREST_URL': '/feedback/interest',
-        'PROBLEM_URL': '/feedback/problem',
-        'COMMENT_URL': '/feedback/comment',
-        'INTEREST_TEMPLATE': 'feedback/interest.html',
-        'PROBLEM_TEMPLATE': 'feedback/problem.html',
-        'COMMENT_TEMPLATE': 'feedback/comment.html'
+    'BLUEPRINT_NAME': 'feedback',
+    'URL_PREFIX': None,
+    'SUBDOMAIN': None,
+    'FLASH_MESSAGES': True,
+    'DEFAULT_FEEDBACK_RETURN_URL': '/',
+    'FEEDBACK_URL': '/feedback',
+    'INTEREST_URL': '/feedback/interest',
+    'PROBLEM_URL': '/feedback/problem',
+    'COMMENT_URL': '/feedback/comment',
+    'INTEREST_TEMPLATE': 'feedback/interest.html',
+    'PROBLEM_TEMPLATE': 'feedback/problem.html',
+    'COMMENT_TEMPLATE': 'feedback/comment.html',
+    'PRIORITY_CHOICES': [('low', 'low'),
+                         ('medium', 'medium'),
+                         ('high', 'high'),
+                         ('urgent', 'urgent')]
 }
 
 _default_messages = {
-        'INVALID_REDIRECT': ('Redirections outside the domain are forbidden', 'error'),
-        'DEFAULT': ("Thank you for your input.", 'info'),
-        'INTEREST_RESPOND': ("Thank you for your interest!", 'success'),
-        'PROBLEM_RESPOND': ("Thank you for submitting your issue.", 'success'),
-        'COMMENT_RESPOND': ("Thank you for the feedback!", 'success'),
-        'INVALID_EMAIL_ADDRESS': ('Invalid email address', 'error'),
-        'EMAIL_NOT_PROVIDED': ('Email not provided', 'error'),
+    'INVALID_REDIRECT': ('Redirections outside the domain are forbidden', 'error'),
+    'INTEREST_RESPOND': ("Thank you for your interest!", 'success'),
+    'PROBLEM_RESPOND': ("Thank you for submitting your issue.", 'success'),
+    'COMMENT_RESPOND': ("Thank you for the feedback!", 'success'),
+    'INVALID_EMAIL_ADDRESS': ('Invalid email address', 'error'),
+    'EMAIL_NOT_PROVIDED': ('Email not provided', 'error'),
 }
 
 _default_forms = {
-        'interest_form': InterestForm,
-        'problem_form': ProblemForm,
-        'comment_form': CommentForm
+    'interest_form': InterestForm,
+    'problem_form': ProblemForm,
+    'comment_form': CommentForm
 }
+
 
 def _context_processor():
     return dict(url_for_feedback=url_for_feedback, flack=_flack)
+
 
 def _get_state(app, datastore, **kwargs):
     for key, value in get_config(app).items():

@@ -1,12 +1,10 @@
-import inspect
 import urlparse
 import flask_wtf as wtf
 from flask import request, current_app
 from flask_wtf import Form as BaseForm, TextField, TextAreaField, SelectField,\
-    SubmitField, HiddenField, BooleanField, ValidationError, Field
+    SubmitField, HiddenField, ValidationError
 from werkzeug import LocalProxy
 from .utils import get_message
-
 
 _datastore = LocalProxy(lambda: current_app.extensions['flack'].datastore)
 
@@ -16,18 +14,19 @@ _default_choices = [('low', 'low'),
                     ('urgent', 'urgent')]
 
 _default_form_field_labels = {
-        'email': 'Email Address',
-        'interest': 'Interest',
-        'submit_interest': 'Submit',
-        'problem': 'Problem',
-        'requested_priority': 'priority',
-        'submit_problem': 'Tell us your problem',
-        'comment': 'Comment',
-        'submit_comment': 'Tell us what you think'
-        }
+    'feedback_email': 'Email Address',
+    'interest': 'Interest',
+    'submit_interest': 'Submit',
+    'problem': 'Problem',
+    'requested_priority': 'priority',
+    'submit_problem': 'Tell us your problem',
+    'comment': 'Comment',
+    'submit_comment': 'Tell us what you think'
+}
+
 
 def get_form_field_label(key):
-     return _default_form_field_labels.get(key, '')
+    return _default_form_field_labels.get(key, '')
 
 
 class ValidatorMixin(object):
@@ -55,11 +54,13 @@ class Form(BaseForm):
             self.TIME_LIMIT = None
         super(Form, self).__init__(*args, **kwargs)
 
+    def to_dict(form):
+        raise NotImplementedError
+
 
 class EmailFormMixin():
-    email = TextField(get_form_field_label('email'),
-        validators=[email_required,
-                    email_validator])
+    feedback_email = TextField(get_form_field_label('feedback_email'),
+                               validators=[email_required, email_validator])
 
 
 class TagMixin():
@@ -81,6 +82,11 @@ class InterestForm(Form, TagMixin, EmailFormMixin, NextFormMixin):
     interest = TextAreaField(get_form_field_label('interest'))
     submit = SubmitField(get_form_field_label('submit_interest'))
 
+    def to_dict(form):
+        return {'feedback_email': form.feedback_email.data or None,
+                'feedback_content': form.interest.data,
+                'feedback_tag': 'interest'}
+
     def validate(self):
         if not super(InterestForm, self).validate():
             return False
@@ -88,9 +94,16 @@ class InterestForm(Form, TagMixin, EmailFormMixin, NextFormMixin):
 
 
 class ProblemForm(Form, TagMixin, EmailFormMixin, NextFormMixin):
-    requested_priority = SelectField(get_form_field_label('requested_priority'), choices=_default_choices)
+    feedback_priority = SelectField(get_form_field_label('requested_priority'),
+                                    choices=_default_choices)
     problem = TextAreaField(get_form_field_label('problem'))
     submit = SubmitField(get_form_field_label('submit_problem'))
+
+    def to_dict(form):
+        return {'feedback_email': form.feedback_email.data or None,
+                'feedback_content': form.problem.data,
+                'feedback_priority': form.feedback_priority.data,
+                'feedback_tag': 'problem'}
 
     def validate(self):
         if not super(ProblemForm, self).validate():
@@ -98,9 +111,13 @@ class ProblemForm(Form, TagMixin, EmailFormMixin, NextFormMixin):
         return True
 
 
-class CommentForm(Form, TagMixin, EmailFormMixin, NextFormMixin):
+class CommentForm(Form, TagMixin, NextFormMixin):
     comment = TextAreaField(get_form_field_label('comment'))
     submit = SubmitField(get_form_field_label('submit_comment'))
+
+    def to_dict(form):
+        return {'feedback_content': form.comment.data,
+                'feedback_tag': 'comment'}
 
     def validate(self):
         if not super(CommentForm, self).validate():
