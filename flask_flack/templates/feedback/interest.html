@@ -1,3 +1,6 @@
+<h1>Let us know you're interested</h1>
+{{ flack_ctx.inline }}
+{#}
 {% from "feedback/_feedback_macros/_feedback_macros.html" import render_field_with_errors, render_field %}
 {% include "feedback/_feedback_macros/_messages.html" %}
 <h1>Let us know you're interested</h1>
@@ -8,3 +11,4 @@
   {{ render_field_with_errors(form.interest) }}
   {{ render_field(form.submit) }}
 </form>
+{#}

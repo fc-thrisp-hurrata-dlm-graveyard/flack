@@ -1,0 +1,12 @@
+{% macro problem_macro(problem) %}
+    <form action="{{ url_for_feedback('problem') }}" method="POST" name="problem_form">
+        {% from "feedback/_feedback_macros/_feedback_macros.html" import render_field_with_errors, render_field %}
+        {% include "feedback/_feedback_macros/_messages.html" %}
+        {{ problem.form.hidden_tag() }}
+        {{ problem.form.feedback_tag() }}
+        {{ problem.form.feedback_priority() }}
+        {{ render_field_with_errors(problem.form.feedback_email)  }}
+        {{ render_field_with_errors(problem.form.problem) }}
+        {{ render_field(problem.form.submit) }}
+    </form>
+{% endmacro %}

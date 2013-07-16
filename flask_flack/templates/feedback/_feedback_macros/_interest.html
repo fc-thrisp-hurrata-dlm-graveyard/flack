@@ -1,0 +1,11 @@
+{% macro interest_macro(interest) %}
+    <form action="{{ url_for_feedback('interest') }}" method="POST" name="interest_form">
+        {% from "feedback/_feedback_macros/_feedback_macros.html" import render_field_with_errors, render_field %}
+        {% include "feedback/_feedback_macros/_messages.html" %}
+        {{ interest.form.hidden_tag() }}
+        {{ interest.form.feedback_tag() }}
+        {{ render_field_with_errors(interest.form.feedback_email) }}
+        {{ render_field_with_errors(interest.form.interest) }}
+        {{ render_field(interest.form.submit) }}
+    </form>
+{% endmacro %}

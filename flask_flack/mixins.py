@@ -13,7 +13,6 @@ class FeedbackMixin(object):
                                     'medium',
                                     'high',
                                     'urgent',
-                                    'immediate',
                                     default='low',
                                     name='requested_priority',
                                     native_enum=False))

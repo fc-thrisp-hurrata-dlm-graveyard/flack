@@ -49,3 +49,8 @@ def config_value(key, app=None, default=None):
 def do_flash(message, category=None):
     if config_value('FLASH_MESSAGES'):
         flash(message, category)
+
+def set_form_next(form):
+    if getattr(form, 'next', None):
+        form.next.data = get_url(request.args.get('next')) \
+            or get_url(request.form.get('next')) or ''

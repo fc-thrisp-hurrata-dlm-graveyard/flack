@@ -1,10 +1,13 @@
-from flask import current_app
+from flask import current_app, request, get_template_attribute
 from werkzeug import LocalProxy
+from werkzeug.datastructures import MultiDict
 from .forms import InterestForm, ProblemForm, CommentForm
 from .views import create_blueprint
-from .utils import get_config, url_for_feedback
+from .utils import (get_config, url_for_feedback, set_form_next,
+                    config_value as cv)
 
 _flack = LocalProxy(lambda: current_app.extensions['flack'])
+_endpoint = LocalProxy(lambda: request.endpoint.rsplit('.')[-1])
 
 _default_config = {
     'BLUEPRINT_NAME': 'feedback',
@@ -35,9 +38,9 @@ _default_messages = {
 }
 
 _default_forms = {
-    'interest_form': InterestForm,
-    'problem_form': ProblemForm,
-    'comment_form': CommentForm
+    'interest_form': (InterestForm, 'feedback/_feedback_macros/_interest.html', 'interest_macro'),
+    'problem_form': (ProblemForm, 'feedback/_feedback_macros/_problem.html', 'problem_macro'),
+    'comment_form': (CommentForm,'feedback/_feedback_macros/_comment.html', 'comment_macro')
 }
 
 
@@ -62,10 +65,106 @@ def _get_state(app, datastore, **kwargs):
     return _FeedbackState(**kwargs)
 
 
+class _Ctx(object):
+    def __init__(self, **kwargs):
+        self.update(**kwargs)
+
+    def update(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    @property
+    def inline(self):
+        return self.macro(self)
+
+
 class _FeedbackState(object):
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key.lower(), value)
+
+    @property
+    def _ctx(self):
+        ctx = _Ctx(template=self._ctx_template,
+                   form=self._ctx_view_form,
+                   macro=self._ctx_form_macro)
+        if request.json:
+            ctx.update(json_ctx=True)
+        ctx.update(**self._run_ctx_processor(_endpoint))
+        return ctx
+
+    @property
+    def _ctx_view_form(self):
+        if request.json:
+            return self._ctx_form_json
+        else:
+            return self._ctx_form
+
+    @property
+    def _ctx_form_base(self):
+        f = getattr(_flack, '{}_form'.format(_endpoint), None)
+        if f:
+            form = f[0]
+            set_form_next(form)
+            return form
+
+    @property
+    def _ctx_form(self):
+        if self._ctx_form_base:
+            return self._ctx_form_base(request.form)
+
+    @property
+    def _ctx_form_json(self):
+        return self._ctx_form_base(MultiDict(request.json))
+
+    def which_macro(self, which):
+        return getattr(self, '{}_form'.format(which), None)
+
+    @property
+    def _ctx_form_macro(self):
+        m = self.which_macro(_endpoint)
+        if m:
+            mform, mwhere, mname = m[0], m[1], m[2]
+            return get_template_attribute(mwhere, mname)
+
+    def inline_form(self, which, form=None, ctx=None):
+        """
+        Inline a form inside any template
+
+        :param which: which macro to use, where there is a corresponding
+        configuration variable e.g. specify 'login' where
+        config value 'login_form' exists(see _default_forms
+        above)
+        :param form: optional, designate a specific form to use within
+        the macro
+        :param ctx: optional, a dict with specific context variables to use
+
+        e.g. within in a another template
+
+        {{ security.inline_form('change_password') }}
+
+        or
+
+        {{ security.inline_form('login', MyLoginForm, {'myvar': 12345}) }}
+        """
+        m = self.which_macro(which)
+        if m:
+            mform, mwhere, mname = m[0], m[1], m[2]
+            t = get_template_attribute(mwhere, mname)
+            t_ctx = _Ctx()
+            t_ctx.update(**self._run_ctx_processor(_endpoint))
+            t_ctx.update(macro=t)
+            if form:
+                t_ctx.update(form=form(request.form))
+            else:
+                t_ctx.update(form=m[0](request.form))
+            if ctx:
+                t_ctx.update(**ctx)
+            return t(t_ctx)
+
+    @property
+    def _ctx_template(self):
+        return cv('{}_TEMPLATE'.format(_endpoint))
 
     def _add_ctx_processor(self, endpoint, fn):
         group = self._context_processors.setdefault(endpoint, [])
@@ -124,11 +223,14 @@ class Flack(object):
 
         if register_blueprint:
             app.register_blueprint(create_blueprint(state, __name__))
-            app.context_processor(_context_processor)
+            self.register_context_processors(app, _context_processor())
 
         app.extensions['flack'] = state
 
         return state
+
+    def register_context_processors(self, app, context_processors):
+        app.jinja_env.globals.update(context_processors)
 
     def __getattr__(self, name):
         return getattr(self._state, name, None)
