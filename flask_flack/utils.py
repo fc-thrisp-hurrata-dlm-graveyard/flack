@@ -1,7 +1,7 @@
 from flask import url_for, current_app, request, session, flash
 from werkzeug import LocalProxy
 
-_flack = LocalProxy(lambda: current_app.extensions['flack'])
+_feedback = LocalProxy(lambda: current_app.extensions['feedback'])
 
 def get_url(endpoint_or_url):
     try:
@@ -32,7 +32,7 @@ def get_config(app):
     return dict([strip_prefix(i) for i in items if i[0].startswith(prefix)])
 
 def get_feedback_endpoint_name(endpoint):
-    return '{}.{}'.format(_flack.blueprint_name, endpoint)
+    return '{}.{}'.format(_feedback.blueprint_name, endpoint)
 
 def url_for_feedback(endpoint, **values):
     endpoint = get_feedback_endpoint_name(endpoint)

@@ -1,32 +1,26 @@
-import urlparse
+import sys
+import inspect
+
+PY2 = sys.version_info[0] == 2
+if PY2:
+    import urlparse
+else:
+    import urllib.parse
+
 import flask_wtf as wtf
-from flask import request, current_app
-from flask_wtf import Form as BaseForm, TextField, TextAreaField, SelectField,\
-    SubmitField, HiddenField, ValidationError
+from flask import request, current_app, get_template_attribute
+from flask_wtf import Form as BaseForm
+from wtforms import TextAreaField, SelectField, TextField,\
+    SubmitField, HiddenField, ValidationError, Field
+from wtforms.validators import Required, Email
 from werkzeug import LocalProxy
-from .utils import get_message
+from .utils import get_message, config_value
 
-_datastore = LocalProxy(lambda: current_app.extensions['flack'].datastore)
+_datastore = LocalProxy(lambda: current_app.extensions['feedback'].datastore)
 
-_default_choices = [('low', 'low'),
-                    ('medium', 'medium'),
-                    ('high', 'high'),
-                    ('urgent', 'urgent')]
-
-_default_form_field_labels = {
-    'feedback_email': 'Email Address',
-    'interest': 'Interest',
-    'submit_interest': 'Submit',
-    'problem': 'Problem',
-    'requested_priority': 'priority',
-    'submit_problem': 'Tell us your problem',
-    'comment': 'Comment',
-    'submit_comment': 'Tell us what you think'
-}
-
-
-def get_form_field_label(key):
-    return _default_form_field_labels.get(key, '')
+_default_choices = LocalProxy(lambda: config_value('priority_choices')['options'])
+_default_choices_default = LocalProxy(lambda: config_value('priority_choices')['default'])
+_default_submit_text = LocalProxy(lambda: config_value('submit_text'))
 
 
 class ValidatorMixin(object):
@@ -36,35 +30,16 @@ class ValidatorMixin(object):
         return super(ValidatorMixin, self).__call__(form, field)
 
 
-class Required(ValidatorMixin, wtf.Required):
+class Required(ValidatorMixin, Required):
     pass
 
 
-class Email(ValidatorMixin, wtf.Email):
+class Email(ValidatorMixin, Email):
     pass
 
 
 email_required = Required(message='EMAIL_NOT_PROVIDED')
 email_validator = Email(message='INVALID_EMAIL_ADDRESS')
-
-
-class Form(BaseForm):
-    def __init__(self, *args, **kwargs):
-        if current_app.testing:
-            self.TIME_LIMIT = None
-        super(Form, self).__init__(*args, **kwargs)
-
-    def to_dict(form):
-        raise NotImplementedError
-
-
-class EmailFormMixin():
-    feedback_email = TextField(get_form_field_label('feedback_email'),
-                               validators=[email_required, email_validator])
-
-
-class TagMixin():
-    feedback_tag = HiddenField("feedback_tag")
 
 
 class NextFormMixin():
@@ -78,48 +53,67 @@ class NextFormMixin():
             raise ValidationError(get_message('INVALID_REDIRECT')[0])
 
 
-class InterestForm(Form, TagMixin, EmailFormMixin, NextFormMixin):
-    interest = TextAreaField(get_form_field_label('interest'))
-    submit = SubmitField(get_form_field_label('submit_interest'))
+class EmailFormMixin():
+    feedback_email = TextField('feedback_email', validators=[email_required, email_validator])
+
+
+class PriorityFormMixin():
+    feedback_priority = SelectField('feedback_priority', choices=_default_choices, default=_default_choices_default)
+
+
+class SubmitFormMixin():
+    submit = SubmitField(_default_submit_text)
+
+
+class FeedbackForm(EmailFormMixin, SubmitFormMixin, BaseForm):
+    template = 'feedback/feedback.html',
+    mname = 'feedback_macro'
+    mtemplate = 'feedback/_feedback_macros/_feedback.html'
+
+    feedback_tag = HiddenField("feedback_tag")
+    feedback_content = TextAreaField('feedback_content')
+
+    def __init__(self, *args, **kwargs):
+        if current_app.testing:
+            self.TIME_LIMIT = None
+        super(FeedbackForm, self).__init__(*args, **kwargs)
+        self.instance_tag = 'feedback'
+
+    def update(self, ctx):
+        [setattr(self, k, v) for k,v in ctx.items()]
 
     def to_dict(form):
-        return {'feedback_email': form.feedback_email.data or None,
-                'feedback_content': form.interest.data,
-                'feedback_tag': 'interest'}
+        def is_field_and_user_attr(member):
+            return isinstance(member, Field) and \
+                hasattr(_datastore.feedback_model, member.name)
+
+        fields = inspect.getmembers(form, is_field_and_user_attr)
+        return dict((k, v.data) for k, v in fields)
+
+    @property
+    def _macro_renderable(self):
+        return get_template_attribute(self.mtemplate, self.mname)
+
+    def macro_render(self, ctx):
+        self.update(ctx)
+        return self._macro_renderable(self)
 
     def validate(self):
-        if not super(InterestForm, self).validate():
+        if not super(FeedbackForm, self).validate():
             return False
         return True
 
 
-class ProblemForm(Form, TagMixin, EmailFormMixin, NextFormMixin):
-    feedback_priority = SelectField(get_form_field_label('requested_priority'),
-                                    choices=_default_choices)
-    problem = TextAreaField(get_form_field_label('problem'))
-    submit = SubmitField(get_form_field_label('submit_problem'))
+class ProblemsForm(PriorityFormMixin, FeedbackForm):
+    template = 'feedback/problems.html',
+    mname = 'problems_macro'
+    mtemplate = 'feedback/_feedback_macros/_feedback.html'
 
-    def to_dict(form):
-        return {'feedback_email': form.feedback_email.data or None,
-                'feedback_content': form.problem.data,
-                'feedback_priority': form.feedback_priority.data,
-                'feedback_tag': 'problem'}
+    def __init__(self, *args, **kwargs):
+        super(ProblemsForm, self).__init__(*args, **kwargs)
+        self.instance_tag = 'problems'
 
     def validate(self):
-        if not super(ProblemForm, self).validate():
-            return False
-        return True
-
-
-class CommentForm(Form, TagMixin, NextFormMixin):
-    comment = TextAreaField(get_form_field_label('comment'))
-    submit = SubmitField(get_form_field_label('submit_comment'))
-
-    def to_dict(form):
-        return {'feedback_content': form.comment.data,
-                'feedback_tag': 'comment'}
-
-    def validate(self):
-        if not super(CommentForm, self).validate():
+        if not super(ProblemsForm, self).validate():
             return False
         return True

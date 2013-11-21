@@ -1,10 +1,5 @@
 import sys
 import os
-
-sys.path.pop(0)
-sys.path.insert(0, os.getcwd())
-
-
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask_flack import Flack, FeedbackMixin, SQLAlchemyFeedbackDatastore
 from tests.test_app import create_app as create_base_app

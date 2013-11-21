@@ -4,8 +4,10 @@ from werkzeug import LocalProxy
 from .utils import (get_post_feedback_redirect, get_message, do_flash)
 
 
-_flack = LocalProxy(lambda: current_app.extensions['flack'])
-_datastore = LocalProxy(lambda: _flack.datastore)
+_feedback = LocalProxy(lambda: current_app.extensions['feedback'])
+
+_datastore = LocalProxy(lambda: _feedback.datastore)
+
 _endpoint = LocalProxy(lambda: request.endpoint.rsplit('.')[-1])
 
 
@@ -28,11 +30,12 @@ def _commit(response=None):
 
 
 def feedback():
-    ctx = _flack._ctx
-    form = ctx.form
+    use_form = _feedback.current_form()
 
-    if form.validate_on_submit():
-        _datastore.create_feedback(**form.to_dict())
+    print use_form.validate_on_submit()
+
+    if use_form.validate_on_submit():
+        _datastore.create_feedback(**use_form.to_dict())
         after_this_request(_commit)
 
         if request.json:
@@ -41,21 +44,16 @@ def feedback():
             do_flash(*get_message("{}_RESPOND".format(_endpoint.upper())))
             return redirect(get_post_feedback_redirect())
 
-    return render_template(ctx.template, flack_ctx=ctx)
+    return render_template(_feedback.current_template)
 
 
 def create_blueprint(state, import_name):
-    bp = Blueprint(state.blueprint_name, import_name,
+    bp = Blueprint(state.blueprint_name,
+                   import_name,
                    url_prefix=state.url_prefix,
                    subdomain=state.subdomain,
                    template_folder='templates')
-    bp.route(state.interest_url,
+    bp.route(state.feedback_url,
              methods=['GET', 'POST'],
-             endpoint='interest')(feedback)
-    bp.route(state.problem_url,
-             methods=['GET', 'POST'],
-             endpoint='problem')(feedback)
-    bp.route(state.comment_url,
-             methods=['GET', 'POST'],
-             endpoint='comment')(feedback)
+             endpoint='feedback')(feedback)
     return bp
