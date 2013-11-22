@@ -32,8 +32,6 @@ def _commit(response=None):
 def feedback():
     use_form = _feedback.current_form()
 
-    print use_form.validate_on_submit()
-
     if use_form.validate_on_submit():
         _datastore.create_feedback(**use_form.to_dict())
         after_this_request(_commit)

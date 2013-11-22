@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, Enum
+from sqlalchemy import Column, String, Text
 
 
 class FeedbackMixin(object):

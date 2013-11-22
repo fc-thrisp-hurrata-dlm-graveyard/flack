@@ -46,12 +46,9 @@ class FeedbackDatastore(object):
     def __init__(self, feedback_model):
         self.feedback_model = feedback_model
 
-    def _prepare_create_feedback(self, **kwargs):
-        return {k: v for k,v in kwargs.items() if k in self.feedback_model.__dict__.keys()}
-
     def create_feedback(self, **kwargs):
         """Creates and returns new feedback from the given parameters."""
-        feedback = self.feedback_model(**self._prepare_create_feedback(**kwargs))
+        feedback = self.feedback_model(**kwargs)
         return self.put(feedback)
 
 

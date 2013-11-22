@@ -120,7 +120,7 @@ class _FeedbackState(object):
 
     def form_macro(self, form):
         form_is = partial(self._form_is, form)
-        run_ctx = partial(self._run_ctx, self._feedback_endpoint)
+        run_ctx = partial(self._run_ctx, form.ctx_tag)
         return self._on_form(form_is, run_ctx)
 
     def _form_is(self, form):
@@ -146,7 +146,7 @@ class Flack(object):
 
     def init_app(self, app, datastore=None, register_blueprint=True, **kwargs):
         """Intializes the Flask-Flack extension for the specified
-        application and datastore implentation.
+        application and datastore implementation.
         """
         datastore = datastore or self.datastore
 

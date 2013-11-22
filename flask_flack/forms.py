@@ -1,5 +1,6 @@
 import sys
 import inspect
+from functools import partial
 
 PY2 = sys.version_info[0] == 2
 if PY2:
@@ -65,19 +66,25 @@ class SubmitFormMixin():
     submit = SubmitField(_default_submit_text)
 
 
-class FeedbackForm(EmailFormMixin, SubmitFormMixin, BaseForm):
+class ContentFormMixin():
+    feedback_content = TextAreaField('feedback_content')
+
+
+class FeedbackForm(EmailFormMixin, ContentFormMixin, SubmitFormMixin, BaseForm):
     template = 'feedback/feedback.html',
     mname = 'feedback_macro'
     mtemplate = 'feedback/_feedback_macros/_feedback.html'
 
     feedback_tag = HiddenField("feedback_tag")
-    feedback_content = TextAreaField('feedback_content')
 
     def __init__(self, *args, **kwargs):
         if current_app.testing:
             self.TIME_LIMIT = None
         super(FeedbackForm, self).__init__(*args, **kwargs)
-        self.instance_tag = 'feedback'
+
+    @classmethod
+    def ctx_tag(cls):
+        return ''.join('_'+x.lower() if x.isupper() else x for x in cls.__name__[:-4]).strip('_')
 
     def update(self, ctx):
         [setattr(self, k, v) for k,v in ctx.items()]
@@ -111,7 +118,6 @@ class ProblemsForm(PriorityFormMixin, FeedbackForm):
 
     def __init__(self, *args, **kwargs):
         super(ProblemsForm, self).__init__(*args, **kwargs)
-        self.instance_tag = 'problems'
 
     def validate(self):
         if not super(ProblemsForm, self).validate():
