@@ -1,6 +1,6 @@
 import re
 from functools import partial
-from flask import current_app, request, get_template_attribute
+from flask import current_app, request, get_template_attribute, _request_ctx_stack
 from werkzeug import LocalProxy
 from werkzeug.datastructures import MultiDict
 from .forms import FeedbackForm, ProblemsForm
@@ -13,7 +13,14 @@ kwarg_is_form = re.compile(".*_form\Z")
 
 _feedback = LocalProxy(lambda: current_app.extensions['feedback'])
 
-_endpoint = LocalProxy(lambda: request.endpoint.rsplit('.')[-1])
+_feedback_point = LocalProxy(lambda: _fp(_request_ctx_stack.top.request))
+
+def _fp(request):
+    f =  [request.values.get('instance', None), request.form.get('instance', None)]
+    if any(f):
+        return list(filter(None, f)).pop()
+    else:
+        return 'feedback'
 
 _default_config = {
     'BLUEPRINT_NAME': 'feedback',
@@ -82,10 +89,6 @@ class _FeedbackState(object):
         for key, value in kwargs.items():
             setattr(self, key.lower(), value)
 
-    @property
-    def _ctx(self):
-        return self._run_ctx(self._feedback_endpoint)
-
     def _add_ctx(self, endpoint, fn):
         group = self._ctxs.setdefault(endpoint, [])
         fn not in group and group.append(fn)
@@ -98,7 +101,7 @@ class _FeedbackState(object):
         return rv
 
     def get_fn_name(self, name):
-        if name.partition('_')[0] == 'security':
+        if name.partition('_')[0] == 'feedback':
             return None
         else:
             return name.rpartition('_')[0]
@@ -116,7 +119,7 @@ class _FeedbackState(object):
 
     @property
     def _feedback_point(self):
-        return request.values.get('instance', 'feedback')
+        return _feedback_point
 
     def form_macro(self, form):
         form_is = partial(self._form_is, form)

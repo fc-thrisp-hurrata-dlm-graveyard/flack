@@ -13,6 +13,7 @@ def create_app(config, **kwargs):
 
     class TestFeedback(db.Model, FeedbackMixin):
         id = db.Column(db.Integer(), primary_key=True)
+        arbitrary = db.Column(db.String())
 
     @app.before_first_request
     def before_first_request():
@@ -21,7 +22,7 @@ def create_app(config, **kwargs):
 
     test_datastore = SQLAlchemyFeedbackDatastore(db, TestFeedback)
 
-    app.flack_e = Flack(app, datastore=test_datastore, **kwargs)
+    app.flack = Flack(app, datastore=test_datastore, **kwargs)
     app.hold_database = db
     app.FEEDBACK_MODEL = TestFeedback
 

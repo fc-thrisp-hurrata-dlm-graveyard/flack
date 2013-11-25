@@ -1,10 +1,9 @@
 from flask_flack import *
-import hmac
-from hashlib import sha1
 import unittest
 from flask import session
-from test_app.sqlalchemy_test import create_app
 from flask_flack.datastore import Datastore
+from flask_flack.forms import FeedbackForm, ProblemsForm, BaseForm
+from .test_app.sqlalchemy_test import create_app
 
 """
     def setUp(self):
@@ -36,16 +35,10 @@ class FlackTest(unittest.TestCase):
         app = self._create_app(self.FEEDBACK_CONFIG or {}, **app_kwargs)
         app.debug = False
         app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
 
         self.app = app
         self.client = app.test_client()
-
-        with self.client.session_transaction() as session:
-            session['csrf'] = 'csrf_token'
-
-        csrf_hmac = hmac.new(self.app.config['SECRET_KEY'],
-                             'csrf_token'.encode('utf8'), digestmod=sha1)
-        self.csrf_token = '##' + csrf_hmac.hexdigest()
 
     def tearDown(self):
         self.app = None
@@ -53,30 +46,18 @@ class FlackTest(unittest.TestCase):
     def _create_app(self, feedback_config, **kwargs):
         return create_app(feedback_config, **kwargs)
 
-    def _get(self,
-             route,
-             content_type=None,
-             follow_redirects=None,
-             headers=None):
+    def _get(self, route, content_type=None, follow_redirects=None, headers=None):
         return self.client.get(route,
                                follow_redirects=follow_redirects,
                                content_type=content_type or 'text/html',
                                headers=headers)
 
-    def _post(self,
-              route,
-              data=None,
-              content_type=None,
-              follow_redirects=True,
-              headers=None):
-        if isinstance(data, dict):
-            data['csrf_token'] = self.csrf_token
-
+    def _post(self,route, data=None, content_type=None, follow_redirects=True, headers=None):
+        content_type = content_type or 'application/x-www-form-urlencoded'
         return self.client.post(route,
                                 data=data,
                                 follow_redirects=follow_redirects,
-                                content_type=content_type or
-                                'application/x-www-form-urlencoded',
+                                content_type=content_type,
                                 headers=headers)
 
     def assert_flashes(self, expected_message, expected_category='message'):

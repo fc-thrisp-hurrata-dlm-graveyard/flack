@@ -21,7 +21,8 @@ setup(
     zip_safe=False,
     platforms='any',
     install_requires=[
-        'Flask>=0.9'
+        'Flask>=0.9',
+        'Flask-WTF>=0.9.3',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

@@ -62,12 +62,12 @@ class PriorityFormMixin():
     feedback_priority = SelectField('feedback_priority', choices=_default_choices, default=_default_choices_default)
 
 
-class SubmitFormMixin():
-    submit = SubmitField(_default_submit_text)
-
-
 class ContentFormMixin():
     feedback_content = TextAreaField('feedback_content')
+
+
+class SubmitFormMixin():
+    submit = SubmitField(_default_submit_text)
 
 
 class FeedbackForm(EmailFormMixin, ContentFormMixin, SubmitFormMixin, BaseForm):
