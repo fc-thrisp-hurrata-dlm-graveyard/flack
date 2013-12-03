@@ -24,24 +24,6 @@ class SQLAlchemyDatastore(Datastore):
         self.db.session.delete(model)
 
 
-class MongoEngineDatastore(Datastore):
-    def put(self, model):
-        model.save()
-        return model
-
-    def delete(self, model):
-        model.delete()
-
-
-class PeeweeDatastore(Datastore):
-    def put(self, model):
-        model.save()
-        return model
-
-    def delete(self, model):
-        model.delete_instance
-
-
 class FeedbackDatastore(object):
     def __init__(self, feedback_model):
         self.feedback_model = feedback_model
@@ -55,24 +37,6 @@ class FeedbackDatastore(object):
 class SQLAlchemyFeedbackDatastore(SQLAlchemyDatastore, FeedbackDatastore):
     def __init__(self, db, feedback_model):
         SQLAlchemyDatastore.__init__(self, db)
-        FeedbackDatastore.__init__(self, feedback_model)
-
-    def find_feedback(self, feedback_tag):
-        pass
-
-
-class MongoEngineFeedbackDatastore(MongoEngineDatastore, FeedbackDatastore):
-    def __init__(self, db, feedback_model):
-        MongoEngineDatastore.__init__(self, db)
-        FeedbackDatastore.__init__(self, feedback_model)
-
-    def find_feedback(self, feedback_tag):
-        pass
-
-
-class PeeweeFeedbackDatastore(PeeweeDatastore, FeedbackDatastore):
-    def __init__(self, db, feedback_model):
-        PeeweeDatastore.__init__(self, db)
         FeedbackDatastore.__init__(self, feedback_model)
 
     def find_feedback(self, feedback_tag):

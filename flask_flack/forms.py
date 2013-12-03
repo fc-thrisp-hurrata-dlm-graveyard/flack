@@ -1,12 +1,7 @@
-import sys
 import inspect
 from functools import partial
 
-PY2 = sys.version_info[0] == 2
-if PY2:
-    import urlparse
-else:
-    import urllib.parse
+from ._compat import url_parse_lib
 
 import flask_wtf as wtf
 from flask import request, current_app, get_template_attribute
@@ -17,8 +12,8 @@ from wtforms.validators import Required, Email
 from werkzeug import LocalProxy
 from .utils import get_message, config_value
 
-_datastore = LocalProxy(lambda: current_app.extensions['feedback'].datastore)
 
+_datastore = LocalProxy(lambda: current_app.extensions['feedback'].datastore)
 _default_choices = LocalProxy(lambda: config_value('priority_choices')['options'])
 _default_choices_default = LocalProxy(lambda: config_value('priority_choices')['default'])
 _default_submit_text = LocalProxy(lambda: config_value('submit_text'))
@@ -47,8 +42,8 @@ class NextFormMixin():
     next = HiddenField()
 
     def validate_next(self, field):
-        url_next = urlparse.urlsplit(field.data)
-        url_base = urlparse.urlsplit(request.host_url)
+        url_next = url_parse_lib.urlsplit(field.data)
+        url_base = url_parse_lib.urlsplit(request.host_url)
         if url_next.netloc and url_next.netloc != url_base.netloc:
             field.data = ''
             raise ValidationError(get_message('INVALID_REDIRECT')[0])
